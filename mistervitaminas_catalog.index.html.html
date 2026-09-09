@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MisterVitaminas - Catálogo de Productos</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        'olive-green': '#556B2F', /* Verde Oliva principal */
+                        'accent-orange': '#F97316', /* Naranja de acento (Tailwind orange-500) */
+                        'accent-orange-hover': '#EA580C', /* Naranja hover (Tailwind orange-600) */
+                        'light-bg': '#F9FAFB', /* Fondo claro */
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F9FAFB;
+        }
+
+        /* Prevent scrolling when modal is open */
+        body.modal-open {
+            overflow: hidden;
+        }
+
+        /* Cart Sidebar Animation */
+        #cart-sidebar {
+            transition: transform 0.3s ease-in-out;
+            transform: translateX(100%);
+        }
+
+        #cart-sidebar.open {
+            transform: translateX(0);
+        }
+
+        /* Fade overlay animation */
+        #cart-overlay {
+            transition: opacity 0.3s ease-in-out;
+            opacity: 0;
+            pointer-events: none;
+        }
+
+        #cart-overlay.open {
+            opacity: 0.5;
+            pointer-events: auto;
+        }
+        
+        /* Subtle hover effect for product cards */
+        .product-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .product-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+    </style>
+</head>
+<body class="bg-light-bg text-gray-800 flex flex-col min-h-screen">
+
+    <header class="bg-olive-green text-white shadow-md sticky top-0 z-40">
+        <div class="container mx-auto px-4 py-4 flex justify-between items-center">
+            <div class="flex items-center gap-2">
+                <i class="fa-solid fa-leaf text-2xl text-accent-orange"></i>
+                <h1 class="text-2xl font-bold tracking-tight">Mister<span class="text-accent-orange">Vitaminas</span></h1>
+            </div>
+            
+            <!-- Cart Button in Header -->
+            <button id="open-cart-btn" class="relative p-2 text-white hover:text-accent-orange transition-colors focus:outline-none">
+                <i class="fa-solid fa-shopping-cart text-xl"></i>
+                <span id="cart-badge" class="absolute top-0 right-0 -mt-1 -mr-1 bg-accent-orange text-white text-xs font-bold rounded-full h-5 w-5 flex items-center justify-center hidden">0</span>
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto px-4 py-8">
+        
+        <div class="text-center mb-10">
+            <h2 class="text-3xl font-bold text-gray-900 mb-2">Nuestros Productos</h2>
+            <p class="text-gray-600">Suplementos de calidad para tu bienestar.</p>
+        </div>
+
+        <!-- Product Grid Container -->
+        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+            <!-- Products will be injected here by JavaScript -->
+        </div>
+
+    </main>
+
+    <footer class="bg-olive-green text-white py-6 mt-auto">
+        <div class="container mx-auto px-4 text-center">
+            <p class="mb-2">&copy; 2026 MisterVitaminas. Todos los derechos reservados.</p>
+            <p class="text-sm text-gray-300">Contactanos por WhatsApp para más información.</p>
+        </div>
+    </footer>
+
+    <div id="cart-overlay" class="fixed inset-0 bg-black z-40"></div>
+
+    <div id="cart-sidebar" class="fixed inset-y-0 right-0 w-full md:w-96 bg-white shadow-2xl z-50 flex flex-col">
+        
+        <!-- Cart Header -->
+        <div class="flex justify-between items-center p-4 border-b bg-gray-50">
+            <h2 class="text-xl font-bold text-gray-800"><i class="fa-solid fa-cart-shopping mr-2 text-olive-green"></i>Tu Carrito</h2>
+            <button id="close-cart-btn" class="text-gray-500 hover:text-red-500 focus:outline-none p-2 rounded-full hover:bg-gray-200 transition-colors">
+                <i class="fa-solid fa-times text-xl"></i>
+            </button>
+        </div>
+
+        <!-- Cart Items Container -->
+        <div id="cart-items" class="flex-grow overflow-y-auto p-4 space-y-4">
+            <!-- Cart items will be injected here -->
+            <div id="empty-cart-message" class="text-center text-gray-500 mt-10">
+                <i class="fa-solid fa-basket-shopping text-4xl mb-3 text-gray-300"></i>
+                <p>Tu carrito está vacío.</p>
+            </div>
+        </div>
+
+        <!-- Cart Footer / Checkout -->
+        <div class="border-t p-4 bg-gray-50">
+            <div class="flex justify-between items-center mb-4">
+                <span class="text-lg font-semibold text-gray-700">Total:</span>
+                <span id="cart-total" class="text-2xl font-bold text-olive-green">$0.00</span>
+            </div>
+            <button id="checkout-btn" class="w-full bg-accent-orange hover:bg-accent-orange-hover text-white font-bold py-3 px-4 rounded-lg shadow-md transition-colors flex items-center justify-center gap-2 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                <i class="fa-brands fa-whatsapp text-xl"></i>
+                Comprar por WhatsApp
+            </button>
+        </div>
+    </div>
+
+    <script>
+        /**
+         * ==========================================
+         * 1. GESTIÓN DE PRODUCTOS (EDITAR AQUÍ)
+         * ==========================================
+         * Modifica este Array para cambiar precios, nombres, descripciones o imágenes.
+         * 
+         * Estructura de cada producto:
+         * - id: Identificador único (número).
+         * - nombre: Nombre del producto (texto).
+         * - descripcion_breve: Una línea corta describiendo el producto (texto).
+         * - precio: Valor numérico usando punto para decimales (ej. 15.50).
+         * - url_imagen: URL de la foto del producto. Puedes usar URLs externas o locales.
+         */
+        const productos = [
+            {
+                id: 4,
+                nombre: "NOMBRE DE TU PRODUCTO AQUÍ",
+                descripcion_breve: "Escribe aquí una breve descripción del producto de tu imagen.",
+                precio: 25.00, // Cambia este número por el precio real
+                url_imagen: "https://drive.google.com/uc?id=1v1W95Z9IgUEZANn3SrylI7OOF3VI4AqP"
+            },
+            {
+                id: 1,
+                nombre: "Nature's Truth, Women's Care, Probiotic-22",
+                descripcion_breve: "Con Arándano y D-Manosa, 30 Mil Millones UFC. 33 Cápsulas Veganas.",
+                precio: 18.49,
+                url_imagen: "https://s3.images-iherb.com/nth/nth12366/l/1.jpg" 
+            },
+            {
+                id: 2,
+                nombre: "Vitamatic, Vitamina D3, 1250 mcg (50,000 UI)",
+                descripcion_breve: "Apoyo óseo e inmunológico. Toma semanal. 60 Cápsulas Vegetales.",
+                precio: 9.99,
+                url_imagen: "https://s3.images-iherb.com/vmc/vmc80030/l/1.jpg"
+            },
+            {
+                id: 3,
+                nombre: "Force Factor, Complejo B",
+                descripcion_breve: "Metabolismo energético y salud del corazón. 60 Cápsulas Vegetales.",
+                precio: 5.99,
+                url_imagen: "https://s3.images-iherb.com/foa/foa66023/l/1.jpg"
+            }
+        ];
+
+        /**
+         * ==========================================
+         * 2. LÓGICA DE ESTADO (CARRITO)
+         * ==========================================
+         */
+        let carrito = []; // Array que almacenará los items añadidos
+
+        // Elementos del DOM
+        const productGrid = document.getElementById('product-grid');
+        const cartSidebar = document.getElementById('cart-sidebar');
+        const cartOverlay = document.getElementById('cart-overlay');
+        const openCartBtn = document.getElementById('open-cart-btn');
+        const closeCartBtn = document.getElementById('close-cart-btn');
+        const cartItemsContainer = document.getElementById('cart-items');
+        const emptyCartMessage = document.getElementById('empty-cart-message');
+        const cartTotalEl = document.getElementById('cart-total');
+        const cartBadge = document.getElementById('cart-badge');
+        const checkoutBtn = document.getElementById('checkout-btn');
+        const body = document.body;
+
+        // Configuración de WhatsApp
+        const numeroWhatsApp = "5930964232272"; // Número proporcionado
+
+        /**
+         * ==========================================
+         * 3. RENDERIZADO DEL CATÁLOGO
+         * ==========================================
+         */
+        function renderProductos() {
+            productGrid.innerHTML = ''; // Limpiar grilla
+
+            productos.forEach(producto => {
+                const card = document.createElement('div');
+                card.className = 'product-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full';
+                
+                card.innerHTML = `
+                    <div class="relative w-full pb-[100%] bg-gray-50"> <!-- Aspect ratio 1:1 -->
+                        <img src="${producto.url_imagen}" alt="${producto.nombre}" class="absolute inset-0 w-full h-full object-cover p-4" onerror="this.src='https://placehold.co/400x400/e2e8f0/64748b?text=Imagen+No+Disponible'">
+                    </div>
+                    <div class="p-5 flex flex-col flex-grow">
+                        <div class="flex justify-between items-start mb-2">
+                            <h3 class="text-lg font-bold text-gray-900 leading-tight">${producto.nombre}</h3>
+                            <span class="text-lg font-black text-olive-green whitespace-nowrap ml-2">$${producto.precio.toFixed(2)}</span>
+                        </div>
+                        <p class="text-sm text-gray-500 mb-4 flex-grow">${producto.descripcion_breve}</p>
+                        <button onclick="agregarAlCarrito(${producto.id})" class="w-full bg-accent-orange hover:bg-accent-orange-hover text-white font-medium py-2 px-4 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2">
+                            <i class="fa-solid fa-cart-plus"></i> Agregar al carrito
+                        </button>
+                    </div>
+                `;
+                productGrid.appendChild(card);
+            });
+        }
+
+        /**
+         * ==========================================
+         * 4. FUNCIONALIDAD DEL CARRITO
+         * ==========================================
+         */
+        
+        function agregarAlCarrito(idProducto) {
+            const producto = productos.find(p => p.id === idProducto);
+            if (!producto) return;
+
+            const itemExistente = carrito.find(item => item.id === idProducto);
+
+            if (itemExistente) {
+                itemExistente.cantidad += 1;
+            } else {
+                carrito.push({
+                    ...producto,
+                    cantidad: 1
+                });
+            }
+
+            actualizarCarritoUI();
+            abrirCarrito(); // Opcional: Abrir el sidebar al agregar
+        }
+
+        function modificarCantidad(idProducto, cambio) {
+            const index = carrito.findIndex(item => item.id === idProducto);
+            if (index !== -1) {
+                carrito[index].cantidad += cambio;
+                if (carrito[index].cantidad <= 0) {
+                    carrito.splice(index, 1); // Eliminar si la cantidad llega a 0
+                }
+                actualizarCarritoUI();
+            }
+        }
+
+        function eliminarDelCarrito(idProducto) {
+            carrito = carrito.filter(item => item.id !== idProducto);
+            actualizarCarritoUI();
+        }
+
+        function actualizarCarritoUI() {
+            // Limpiar items
+            cartItemsContainer.innerHTML = '';
+            let total = 0;
+            let totalItems = 0;
+
+            if (carrito.length === 0) {
+                cartItemsContainer.appendChild(emptyCartMessage);
+                emptyCartMessage.style.display = 'block';
+                checkoutBtn.disabled = true;
+                cartBadge.classList.add('hidden');
+            } else {
+                emptyCartMessage.style.display = 'none';
+                checkoutBtn.disabled = false;
+                cartBadge.classList.remove('hidden');
+
+                carrito.forEach(item => {
+                    const subtotal = item.precio * item.cantidad;
+                    total += subtotal;
+                    totalItems += item.cantidad;
+
+                    const itemEl = document.createElement('div');
+                    itemEl.className = 'flex items-center gap-4 bg-white p-3 rounded-xl border border-gray-100 shadow-sm';
+                    itemEl.innerHTML = `
+                        <img src="${item.url_imagen}" alt="${item.nombre}" class="w-16 h-16 object-cover rounded-md bg-gray-50 border">
+                        <div class="flex-grow">
+                            <h4 class="text-sm font-bold text-gray-800 line-clamp-1">${item.nombre}</h4>
+                            <div class="text-olive-green font-semibold text-sm mb-1">$${item.precio.toFixed(2)}</div>
+                            
+                            <!-- Controles de Cantidad -->
+                            <div class="flex items-center bg-gray-100 w-fit rounded-lg">
+                                <button onclick="modificarCantidad(${item.id}, -1)" class="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-accent-orange hover:bg-gray-200 rounded-l-lg transition-colors">
+                                    <i class="fa-solid fa-minus text-xs"></i>
+                                </button>
+                                <span class="w-8 text-center text-sm font-medium text-gray-800">${item.cantidad}</span>
+                                <button onclick="modificarCantidad(${item.id}, 1)" class="w-8 h-8 flex items-center justify-center text-gray-600 hover:text-accent-orange hover:bg-gray-200 rounded-r-lg transition-colors">
+                                    <i class="fa-solid fa-plus text-xs"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end justify-between h-full">
+                            <button onclick="eliminarDelCarrito(${item.id})" class="text-gray-400 hover:text-red-500 transition-colors p-1" title="Eliminar">
+                                <i class="fa-solid fa-trash-can"></i>
+                            </button>
+                            <span class="font-bold text-gray-900 text-sm mt-2">$${subtotal.toFixed(2)}</span>
+                        </div>
+                    `;
+                    cartItemsContainer.appendChild(itemEl);
+                });
+            }
+
+            // Actualizar Totales y Badges
+            cartTotalEl.innerText = `$${total.toFixed(2)}`;
+            cartBadge.innerText = totalItems;
+        }
+
+        /**
+         * ==========================================
+         * 5. MANEJO DE LA INTERFAZ (SIDEBAR)
+         * ==========================================
+         */
+        function abrirCarrito() {
+            cartSidebar.classList.add('open');
+            cartOverlay.classList.add('open');
+            body.classList.add('modal-open');
+        }
+
+        function cerrarCarrito() {
+            cartSidebar.classList.remove('open');
+            cartOverlay.classList.remove('open');
+            body.classList.remove('modal-open');
+        }
+
+        openCartBtn.addEventListener('click', abrirCarrito);
+        closeCartBtn.addEventListener('click', cerrarCarrito);
+        cartOverlay.addEventListener('click', cerrarCarrito);
+
+        /**
+         * ==========================================
+         * 6. CHECKOUT Y WHATSAPP
+         * ==========================================
+         */
+        function procesarCompraWhatsApp() {
+            if (carrito.length === 0) return;
+
+            let mensaje = "Hola Mister Vitaminas, quiero comprar los siguientes productos:\n\n";
+            let totalGeneral = 0;
+
+            carrito.forEach(item => {
+                const subtotal = item.precio * item.cantidad;
+                totalGeneral += subtotal;
+                
+                // Formato requerido:
+                // [Nombre del producto 1] - Cantidad: [X] - Valor: $[X] - Subtotal:$[X]
+                mensaje += `${item.nombre} - Cantidad: ${item.cantidad} - Valor: $${item.precio.toFixed(2)} - Subtotal:$${subtotal.toFixed(2)}\n`;
+            });
+
+            mensaje += `\nTotal a pagar: $${totalGeneral.toFixed(2)}`;
+
+            // Codificar mensaje para la URL
+            const mensajeCodificado = encodeURIComponent(mensaje);
+            
+            // Generar enlace
+            const urlWhatsApp = `https://wa.me/${numeroWhatsApp}?text=${mensajeCodificado}`;
+
+            // Abrir en nueva pestaña
+            window.open(urlWhatsApp, '_blank');
+        }
+
+        checkoutBtn.addEventListener('click', procesarCompraWhatsApp);
+
+        /**
+         * ==========================================
+         * 7. INICIALIZACIÓN
+         * ==========================================
+         */
+        // Renderizar productos al cargar la página
+        document.addEventListener('DOMContentLoaded', () => {
+            renderProductos();
+            actualizarCarritoUI(); // Asegurar estado inicial vacío
+        });
+
+    </script>
+</body>
+</html>
