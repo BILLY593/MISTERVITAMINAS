@@ -87,6 +87,15 @@
             transform: translateY(-4px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
         }
+
+        /* Ocultar barra de scroll en contenedor de filtros (móvil) */
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
     </style>
 </head>
 <body class="bg-light-bg text-gray-800 flex flex-col min-h-screen">
@@ -113,9 +122,42 @@
             <p class="text-gray-600">Suplementos de calidad para tu bienestar.</p>
         </div>
 
-        <!-- Product Grid Container: Changed grid-cols-1 to grid-cols-2 for mobile -->
-        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
-            <!-- Products will be injected here by JavaScript -->
+        <div class="flex flex-col md:flex-row gap-8">
+            
+            <!-- Barra Lateral Izquierda: Filtros -->
+            <aside class="w-full md:w-1/4 lg:w-1/5 shrink-0">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 hidden md:block"><i class="fa-solid fa-filter mr-2 text-accent-orange"></i>Categorías</h3>
+                <!-- En móviles este contenedor hace "scroll" horizontal, en escritorio se apila verticalmente -->
+                <div class="flex flex-row md:flex-col gap-2 md:gap-3 overflow-x-auto pb-2 md:pb-0 hide-scrollbar">
+                    <button onclick="aplicarFiltro('todos')" data-categoria="todos" class="filter-btn bg-olive-green text-white border border-olive-green px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors text-left flex items-center shadow-sm">
+                        <span>Todos los productos</span>
+                    </button>
+                    <button onclick="aplicarFiltro('hombre')" data-categoria="hombre" class="filter-btn bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors text-left flex items-center shadow-sm">
+                        <span>Productos Hombre</span>
+                    </button>
+                    <button onclick="aplicarFiltro('mujer')" data-categoria="mujer" class="filter-btn bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors text-left flex items-center shadow-sm">
+                        <span>Productos Mujer</span>
+                    </button>
+                    <button onclick="aplicarFiltro('niños')" data-categoria="niños" class="filter-btn bg-white text-gray-700 hover:bg-gray-100 border border-gray-200 px-4 py-2.5 rounded-xl text-sm font-medium whitespace-nowrap transition-colors text-left flex items-center shadow-sm">
+                        <span>Productos Niños</span>
+                    </button>
+                </div>
+            </aside>
+
+            <!-- Área Principal: Buscador y Grilla -->
+            <div class="w-full md:w-3/4 lg:w-4/5">
+                
+                <!-- Barra de Búsqueda Superior -->
+                <div class="relative mb-6">
+                    <i class="fa-solid fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 text-lg"></i>
+                    <input type="text" id="buscador-productos" placeholder="Buscar suplementos, vitaminas, descripciones..." class="w-full pl-12 pr-4 py-3.5 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-olive-green focus:border-transparent shadow-sm transition-shadow text-gray-700 text-base">
+                </div>
+
+                <!-- Product Grid Container -->
+                <div id="product-grid" class="grid grid-cols-2 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                    <!-- Products will be injected here by JavaScript -->
+                </div>
+            </div>
         </div>
 
     </main>
@@ -187,6 +229,7 @@
          * 
          * Estructura de cada producto:
          * - id: Identificador único (número).
+         * - etiqueta: "hombre", "mujer", "niños". Úsala para que el filtro funcione.
          * - nombre: Nombre del producto (texto).
          * - descripcion_breve: Una línea corta describiendo el producto (texto).
          * - descripcion_detallada: Descripción extensa para mostrar en la ventana flotante.
@@ -196,55 +239,63 @@
         const productos = [
             {
                 id: 4,
+                etiqueta: ["mujer", "hombre"],
                 nombre: "NOMBRE DE TU PRODUCTO AQUÍ",
                 descripcion_breve: "Escribe aquí una breve descripción del producto de tu imagen.",
                 descripcion_detallada: "Esta es la descripción detallada del producto. Aquí puedes explicar los beneficios completos, dosis recomendada, ingredientes, y cualquier otra información importante para tus clientes.",
-                precio: 25.00, // Cambia este número por el precio real
-                url_imagen: "https://drive.google.com/uc?id=1v1W95Z9IgUEZANn3SrylI7OOF3VI4AqP"
+                precio: 25.00,
+                url_imagen: "imagenes/imagen_producto_4.jpg"
             },
             {
                 id: 1,
+                etiqueta: "mujer",
                 nombre: "Nature's Truth, Women's Care, Probiotic-22",
                 descripcion_breve: "Con Arándano y D-Manosa, 30 Mil Millones UFC. 33 Cápsulas Veganas.",
                 descripcion_detallada: "Este probiótico restaurador formulado por médicos proporciona apoyo específico para la salud digestiva y vaginal. Contiene 30 mil millones de UFC y 18 cepas vivas para apoyar un equilibrio saludable de la microflora. También incluye arándano concentrado de primera calidad con proantocianidinas (PAC) de origen natural y D-Manosa para ayudar a las defensas naturales del cuerpo. No requiere refrigeración.",
                 precio: 18.49,
-                url_imagen: "https://s3.images-iherb.com/nth/nth12366/l/1.jpg" 
+                url_imagen: "imagenes/imagen_producto_1.jpg" 
             },
             {
                 id: 2,
+                etiqueta: ["hombre", "mujer", "niños"],
                 nombre: "Vitamatic, Vitamina D3, 1250 mcg (50,000 UI)",
                 descripcion_breve: "Apoyo óseo e inmunológico. Toma semanal. 60 Cápsulas Vegetales.",
                 descripcion_detallada: "Vitamatic Vitamina D3 es un nutriente muy importante para el funcionamiento muscular saludable en general, aumenta la absorción de calcio para tener huesos y dientes más fuertes y favorece el sistema inmunológico. Formulada para tomarse solo una vez a la semana. Todos los beneficios de la vitamina D sin el riesgo de exposición sin protección a los rayos UVB.",
                 precio: 9.99,
-                url_imagen: "https://s3.images-iherb.com/vmc/vmc80030/l/1.jpg"
+                url_imagen: "imagenes/imagen_producto_2.jpg"
             },
             {
                 id: 3,
+                etiqueta: "niños",
                 nombre: "Force Factor, Complejo B",
                 descripcion_breve: "Metabolismo energético y salud del corazón. 60 Cápsulas Vegetales.",
                 descripcion_detallada: "Complejo B con 8 vitaminas B esenciales formulado para apoyar el metabolismo energético y la salud del corazón. Ayuda a convertir los alimentos en energía celular y apoya la salud del sistema nervioso. Fórmula vegana, sin gelatina y Non-GMO. Contiene Tiamina, Riboflavina, Niacina, Vitamina B6, Folato, Vitamina B-12, Biotina y Ácido Pantoténico.",
                 precio: 5.99,
-                url_imagen: "https://s3.images-iherb.com/foa/foa66023/l/1.jpg"
+                url_imagen: "imagenes/imagen_producto_3.jpg"
+            },
+            {
+                id: 5,
+                etiqueta: ["hombre", "mujer", "niños"],
+                nombre: "Levoit Purificador de Aire para Hogar",
+                descripcion_breve: "Filtro HEPA para alérgenos, humo y caspa de mascotas. Ideal para dormitorios.",
+                descripcion_detallada: "Purificador de aire de alta eficiencia con filtración HEPA. Ideal para capturar el 99.9% de las partículas en el aire como polvo, humo, polen y caspa de mascotas. Cuenta con un diseño compacto, aromaterapia y funcionamiento extremadamente silencioso, perfecto para dormitorios o espacios de trabajo. Mejora la calidad del aire y el bienestar respiratorio de toda la familia.",
+                precio: 49.99,
+                url_imagen: "imagenes/imagen_producto_5.jpg"
             }
         ];
 
         /**
          * ==========================================
-         * 2. LÓGICA DE ESTADO (CARRITO)
+         * 2. LÓGICA DE ESTADO (CARRITO Y FILTROS)
          * ==========================================
          */
-        let carrito = []; // Array que almacenará los items añadidos
+        let carrito = []; 
+        let filtroActual = 'todos'; // Puede ser: 'todos', 'hombre', 'mujer', 'niños'
+        let busquedaActual = '';
 
         // Elementos del DOM
         const productGrid = document.getElementById('product-grid');
-        const cartSidebar = document.getElementById('cart-sidebar');
-        const cartOverlay = document.getElementById('cart-overlay');
-        const openCartBtn = document.getElementById('open-cart-btn');
-        const closeCartBtn = document.getElementById('close-cart-btn');
-        const cartItemsContainer = document.getElementById('cart-items');
-        const emptyCartMessage = document.getElementById('empty-cart-message');
-        const cartTotalEl = document.getElementById('cart-total');
-        const cartBadge = document.getElementById('cart-badge');
+        const buscadorInput = document.getElementById('buscador-productos');
         const checkoutBtn = document.getElementById('checkout-btn');
         
         // Elementos del Modal de Producto
@@ -252,6 +303,16 @@
         const productModalOverlay = document.getElementById('product-modal-overlay');
         const closeModalBtn = document.getElementById('close-modal-btn');
         const modalContent = document.getElementById('modal-content');
+
+        // Elementos del Carrito (Nuevos)
+        const openCartBtn = document.getElementById('open-cart-btn');
+        const closeCartBtn = document.getElementById('close-cart-btn');
+        const cartOverlay = document.getElementById('cart-overlay');
+        const cartSidebar = document.getElementById('cart-sidebar');
+        const cartItemsContainer = document.getElementById('cart-items');
+        const emptyCartMessage = document.getElementById('empty-cart-message');
+        const cartTotalEl = document.getElementById('cart-total');
+        const cartBadge = document.getElementById('cart-badge');
 
         const body = document.body;
 
@@ -266,7 +327,42 @@
         function renderProductos() {
             productGrid.innerHTML = ''; // Limpiar grilla
 
-            productos.forEach(producto => {
+            // Filtrar productos combinando Búsqueda y Categoría
+            const productosFiltrados = productos.filter(producto => {
+                // 1. Validar barra de búsqueda
+                const termino = busquedaActual.toLowerCase();
+                const coincideBusqueda = producto.nombre.toLowerCase().includes(termino) || 
+                                         producto.descripcion_breve.toLowerCase().includes(termino);
+                
+                // 2. Validar barra lateral (Soporte para múltiples etiquetas)
+                let etiquetasDelProducto = [];
+                
+                // Verificamos si la etiqueta es un Array (ej: ["hombre", "mujer"]) o un texto simple (ej: "mujer")
+                if (Array.isArray(producto.etiqueta)) {
+                    etiquetasDelProducto = producto.etiqueta.map(e => e.toLowerCase());
+                } else if (typeof producto.etiqueta === 'string') {
+                    etiquetasDelProducto = [producto.etiqueta.toLowerCase()];
+                }
+
+                // El producto coincide si estamos en "todos" o si el array de etiquetas incluye el filtro actual
+                const coincideFiltro = filtroActual === 'todos' || etiquetasDelProducto.includes(filtroActual);
+
+                return coincideBusqueda && coincideFiltro;
+            });
+
+            // Mostrar mensaje si no hay resultados
+            if (productosFiltrados.length === 0) {
+                productGrid.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-16 text-gray-500">
+                        <i class="fa-solid fa-magnifying-glass text-4xl mb-4 text-gray-300"></i>
+                        <p class="text-lg">No encontramos productos que coincidan con tu búsqueda.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Renderizar las tarjetas filtradas
+            productosFiltrados.forEach(producto => {
                 const card = document.createElement('div');
                 card.className = 'product-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full';
                 // Añadimos el evento onclick a la tarjeta entera para abrir el modal
@@ -290,6 +386,36 @@
                 `;
                 productGrid.appendChild(card);
             });
+        }
+
+        /**
+         * ==========================================
+         * 3.2 LÓGICA DE EVENTOS (BUSCADOR Y FILTROS)
+         * ==========================================
+         */
+        buscadorInput.addEventListener('input', (e) => {
+            busquedaActual = e.target.value;
+            renderProductos();
+        });
+
+        function aplicarFiltro(categoria) {
+            filtroActual = categoria;
+            
+            // Actualizar botones visualmente para mostrar cuál está activo
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if (btn.dataset.categoria === categoria) {
+                    // Estilo Activo
+                    btn.classList.add('bg-olive-green', 'text-white', 'border-olive-green');
+                    btn.classList.remove('bg-white', 'text-gray-700', 'border-gray-200');
+                } else {
+                    // Estilo Inactivo
+                    btn.classList.remove('bg-olive-green', 'text-white', 'border-olive-green');
+                    btn.classList.add('bg-white', 'text-gray-700', 'border-gray-200');
+                }
+            });
+            
+            // Volver a dibujar los productos
+            renderProductos();
         }
 
         /**
