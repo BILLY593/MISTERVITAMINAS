@@ -43,10 +43,35 @@
         }
 
         /* Fade overlay animation */
-        #cart-overlay {
+        #cart-overlay, #product-modal-overlay {
             transition: opacity 0.3s ease-in-out;
             opacity: 0;
             pointer-events: none;
+        }
+
+        #cart-overlay.open, #product-modal-overlay.open {
+            opacity: 0.5;
+            pointer-events: auto;
+        }
+
+        /* Product Modal Animation */
+        #product-modal {
+            transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+            opacity: 0;
+            transform: scale(0.95);
+            pointer-events: none;
+        }
+
+        #product-modal.open {
+            opacity: 1;
+            transform: scale(1);
+            pointer-events: auto;
+        }
+        
+        /* Subtle hover effect for product cards */
+        .product-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            cursor: pointer; /* Indicate it's clickable */
         }
 
         #cart-overlay.open {
@@ -88,8 +113,8 @@
             <p class="text-gray-600">Suplementos de calidad para tu bienestar.</p>
         </div>
 
-        <!-- Product Grid Container -->
-        <div id="product-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+        <!-- Product Grid Container: Changed grid-cols-1 to grid-cols-2 for mobile -->
+        <div id="product-grid" class="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
             <!-- Products will be injected here by JavaScript -->
         </div>
 
@@ -136,6 +161,23 @@
         </div>
     </div>
 
+    <!-- Product Details Modal -->
+    <div id="product-modal-overlay" class="fixed inset-0 bg-black z-40"></div>
+    <div id="product-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4">
+        <div class="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col md:flex-row relative">
+            
+            <!-- Close Button -->
+            <button id="close-modal-btn" class="absolute top-3 right-3 bg-white bg-opacity-80 rounded-full p-2 text-gray-500 hover:text-red-500 z-10 transition-colors focus:outline-none">
+                <i class="fa-solid fa-times text-xl"></i>
+            </button>
+
+            <!-- Modal Content (will be injected) -->
+            <div id="modal-content" class="flex flex-col md:flex-row w-full h-full overflow-y-auto">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </div>
+
     <script>
         /**
          * ==========================================
@@ -147,6 +189,7 @@
          * - id: Identificador único (número).
          * - nombre: Nombre del producto (texto).
          * - descripcion_breve: Una línea corta describiendo el producto (texto).
+         * - descripcion_detallada: Descripción extensa para mostrar en la ventana flotante.
          * - precio: Valor numérico usando punto para decimales (ej. 15.50).
          * - url_imagen: URL de la foto del producto. Puedes usar URLs externas o locales.
          */
@@ -155,6 +198,7 @@
                 id: 4,
                 nombre: "NOMBRE DE TU PRODUCTO AQUÍ",
                 descripcion_breve: "Escribe aquí una breve descripción del producto de tu imagen.",
+                descripcion_detallada: "Esta es la descripción detallada del producto. Aquí puedes explicar los beneficios completos, dosis recomendada, ingredientes, y cualquier otra información importante para tus clientes.",
                 precio: 25.00, // Cambia este número por el precio real
                 url_imagen: "https://drive.google.com/uc?id=1v1W95Z9IgUEZANn3SrylI7OOF3VI4AqP"
             },
@@ -162,6 +206,7 @@
                 id: 1,
                 nombre: "Nature's Truth, Women's Care, Probiotic-22",
                 descripcion_breve: "Con Arándano y D-Manosa, 30 Mil Millones UFC. 33 Cápsulas Veganas.",
+                descripcion_detallada: "Este probiótico restaurador formulado por médicos proporciona apoyo específico para la salud digestiva y vaginal. Contiene 30 mil millones de UFC y 18 cepas vivas para apoyar un equilibrio saludable de la microflora. También incluye arándano concentrado de primera calidad con proantocianidinas (PAC) de origen natural y D-Manosa para ayudar a las defensas naturales del cuerpo. No requiere refrigeración.",
                 precio: 18.49,
                 url_imagen: "https://s3.images-iherb.com/nth/nth12366/l/1.jpg" 
             },
@@ -169,6 +214,7 @@
                 id: 2,
                 nombre: "Vitamatic, Vitamina D3, 1250 mcg (50,000 UI)",
                 descripcion_breve: "Apoyo óseo e inmunológico. Toma semanal. 60 Cápsulas Vegetales.",
+                descripcion_detallada: "Vitamatic Vitamina D3 es un nutriente muy importante para el funcionamiento muscular saludable en general, aumenta la absorción de calcio para tener huesos y dientes más fuertes y favorece el sistema inmunológico. Formulada para tomarse solo una vez a la semana. Todos los beneficios de la vitamina D sin el riesgo de exposición sin protección a los rayos UVB.",
                 precio: 9.99,
                 url_imagen: "https://s3.images-iherb.com/vmc/vmc80030/l/1.jpg"
             },
@@ -176,6 +222,7 @@
                 id: 3,
                 nombre: "Force Factor, Complejo B",
                 descripcion_breve: "Metabolismo energético y salud del corazón. 60 Cápsulas Vegetales.",
+                descripcion_detallada: "Complejo B con 8 vitaminas B esenciales formulado para apoyar el metabolismo energético y la salud del corazón. Ayuda a convertir los alimentos en energía celular y apoya la salud del sistema nervioso. Fórmula vegana, sin gelatina y Non-GMO. Contiene Tiamina, Riboflavina, Niacina, Vitamina B6, Folato, Vitamina B-12, Biotina y Ácido Pantoténico.",
                 precio: 5.99,
                 url_imagen: "https://s3.images-iherb.com/foa/foa66023/l/1.jpg"
             }
@@ -199,6 +246,13 @@
         const cartTotalEl = document.getElementById('cart-total');
         const cartBadge = document.getElementById('cart-badge');
         const checkoutBtn = document.getElementById('checkout-btn');
+        
+        // Elementos del Modal de Producto
+        const productModal = document.getElementById('product-modal');
+        const productModalOverlay = document.getElementById('product-modal-overlay');
+        const closeModalBtn = document.getElementById('close-modal-btn');
+        const modalContent = document.getElementById('modal-content');
+
         const body = document.body;
 
         // Configuración de WhatsApp
@@ -215,25 +269,78 @@
             productos.forEach(producto => {
                 const card = document.createElement('div');
                 card.className = 'product-card bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden flex flex-col h-full';
+                // Añadimos el evento onclick a la tarjeta entera para abrir el modal
+                card.onclick = () => abrirModalProducto(producto.id);
                 
                 card.innerHTML = `
                     <div class="relative w-full pb-[100%] bg-gray-50"> <!-- Aspect ratio 1:1 -->
-                        <img src="${producto.url_imagen}" alt="${producto.nombre}" class="absolute inset-0 w-full h-full object-cover p-4" onerror="this.src='https://placehold.co/400x400/e2e8f0/64748b?text=Imagen+No+Disponible'">
+                        <img src="${producto.url_imagen}" alt="${producto.nombre}" class="absolute inset-0 w-full h-full object-cover p-2 sm:p-4" onerror="this.src='https://placehold.co/400x400/e2e8f0/64748b?text=Imagen+No+Disponible'">
                     </div>
-                    <div class="p-5 flex flex-col flex-grow">
-                        <div class="flex justify-between items-start mb-2">
-                            <h3 class="text-lg font-bold text-gray-900 leading-tight">${producto.nombre}</h3>
-                            <span class="text-lg font-black text-olive-green whitespace-nowrap ml-2">$${producto.precio.toFixed(2)}</span>
+                    <div class="p-3 sm:p-5 flex flex-col flex-grow">
+                        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-start mb-2 gap-1 sm:gap-0">
+                            <h3 class="text-sm sm:text-lg font-bold text-gray-900 leading-tight line-clamp-2 sm:line-clamp-none">${producto.nombre}</h3>
+                            <span class="text-base sm:text-lg font-black text-olive-green whitespace-nowrap">$${producto.precio.toFixed(2)}</span>
                         </div>
-                        <p class="text-sm text-gray-500 mb-4 flex-grow">${producto.descripcion_breve}</p>
-                        <button onclick="agregarAlCarrito(${producto.id})" class="w-full bg-accent-orange hover:bg-accent-orange-hover text-white font-medium py-2 px-4 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-2">
-                            <i class="fa-solid fa-cart-plus"></i> Agregar al carrito
+                        <p class="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4 flex-grow line-clamp-2 sm:line-clamp-3">${producto.descripcion_breve}</p>
+                        <!-- Detenemos la propagación del click en el botón para que no abra el modal y solo añada al carrito -->
+                        <button onclick="event.stopPropagation(); agregarAlCarrito(${producto.id})" class="w-full bg-accent-orange hover:bg-accent-orange-hover text-white font-medium py-1.5 sm:py-2 px-2 sm:px-4 rounded-xl shadow-sm transition-colors flex items-center justify-center gap-1 sm:gap-2 text-sm sm:text-base">
+                            <i class="fa-solid fa-cart-plus"></i> <span class="hidden sm:inline">Agregar</span>
                         </button>
                     </div>
                 `;
                 productGrid.appendChild(card);
             });
         }
+
+        /**
+         * ==========================================
+         * 3.5 RENDERIZADO Y MANEJO DEL MODAL DE PRODUCTO
+         * ==========================================
+         */
+        
+        function abrirModalProducto(idProducto) {
+            const producto = productos.find(p => p.id === idProducto);
+            if (!producto) return;
+
+            // Construir el contenido del modal
+            modalContent.innerHTML = `
+                <div class="w-full md:w-1/2 bg-gray-50 p-6 flex items-center justify-center">
+                    <img src="${producto.url_imagen}" alt="${producto.nombre}" class="max-h-64 md:max-h-96 object-contain drop-shadow-md" onerror="this.src='https://placehold.co/400x400/e2e8f0/64748b?text=Imagen+No+Disponible'">
+                </div>
+                <div class="w-full md:w-1/2 p-6 md:p-8 flex flex-col">
+                    <h2 class="text-2xl font-bold text-gray-900 mb-2">${producto.nombre}</h2>
+                    <p class="text-3xl font-black text-olive-green mb-4">$${producto.precio.toFixed(2)}</p>
+                    
+                    <div class="mb-6 flex-grow">
+                        <h4 class="font-semibold text-gray-800 mb-2 text-sm uppercase tracking-wider">Descripción</h4>
+                        <p class="text-gray-600 text-sm md:text-base leading-relaxed">
+                            ${producto.descripcion_detallada || producto.descripcion_breve}
+                        </p>
+                    </div>
+
+                    <button onclick="agregarAlCarrito(${producto.id}); cerrarModalProducto();" class="w-full bg-accent-orange hover:bg-accent-orange-hover text-white font-bold py-3 px-4 rounded-xl shadow-md transition-colors flex items-center justify-center gap-2 mt-auto">
+                        <i class="fa-solid fa-cart-plus text-lg"></i> Agregar al carrito
+                    </button>
+                </div>
+            `;
+
+            productModal.classList.add('open');
+            productModalOverlay.classList.add('open');
+            body.classList.add('modal-open');
+        }
+
+        function cerrarModalProducto() {
+            productModal.classList.remove('open');
+            productModalOverlay.classList.remove('open');
+            // Solo remover la clase modal-open si el carrito NO está abierto
+            if (!cartSidebar.classList.contains('open')) {
+                body.classList.remove('modal-open');
+            }
+        }
+
+        closeModalBtn.addEventListener('click', cerrarModalProducto);
+        productModalOverlay.addEventListener('click', cerrarModalProducto);
+
 
         /**
          * ==========================================
@@ -346,7 +453,10 @@
         function cerrarCarrito() {
             cartSidebar.classList.remove('open');
             cartOverlay.classList.remove('open');
-            body.classList.remove('modal-open');
+            // Solo remover si el modal de producto NO está abierto
+            if (!productModal.classList.contains('open')) {
+                body.classList.remove('modal-open');
+            }
         }
 
         openCartBtn.addEventListener('click', abrirCarrito);
