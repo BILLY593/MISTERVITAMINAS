@@ -842,29 +842,30 @@
             const apiKey = ""; // API Key is injected automatically by the platform environment
             const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
 
-            // Create a simplified version of the catalog to send to the AI (saves tokens/data)
+            // Creamos un catálogo simplificado pero con más contexto para que la IA entienda los beneficios
             const simplifiedCatalog = productos.map(p => ({
                 nombre: p.nombre,
                 precio: p.precio,
-                descripcion: p.descripcion_breve,
-                categoria: p.etiqueta
+                // Unimos la descripción breve y detallada para que la IA tenga todas las palabras clave (ej: inmunológico, energía)
+                beneficios_y_descripcion: `${p.descripcion_breve} ${p.descripcion_detallada}`,
+                categoria: p.etiqueta,
+                subcategoria: p.subcategoria
             }));
 
-            // Master Prompt instructing the AI how to behave
-            const systemPrompt = `Eres el asistente virtual experto en ventas de la tienda "MisterVitaminas".
-Tu objetivo es ayudar a los clientes a elegir el mejor producto según sus síntomas o necesidades.
-Mantén una personalidad amable, profesional y concisa (respuestas cortas, 2 o 3 oraciones como máximo).
+            // Master Prompt: Instrucciones ultra detalladas de comportamiento
+            const systemPrompt = `Eres el asistente virtual experto y vendedor estrella de la tienda "MisterVitaminas".
+Tu objetivo principal es actuar como un consultor: escucha los síntomas o necesidades del cliente (ej. "quiero subir mis defensas", "busco más energía", "algo para el estómago") y recomiéndale el producto exacto que le ayude.
 
-IMPORTANTE: Aquí está el catálogo ACTUALIZADO de productos disponibles (en formato JSON). 
-Si recomiendas algo, USA EXCLUSIVAMENTE los productos de esta lista:
-${JSON.stringify(simplifiedCatalog)}
+IMPORTANTE: Aquí está el catálogo ACTUALIZADO de productos disponibles en tu tienda (en formato JSON). 
+Lee atentamente la propiedad "beneficios_y_descripcion" de cada producto para saber qué recomendar.
+CATÁLOGO: ${JSON.stringify(simplifiedCatalog)}
 
-Reglas estrictas:
-1. NUNCA inventes productos que no estén en la lista JSON.
-2. Si recomiendas un producto, incluye siempre su nombre exacto y su precio.
-3. Si el usuario pide algo que no tenemos, dile cortésmente que por el momento no está en stock, e invítalo a revisar otras categorías.
-4. Usa un lenguaje natural y no menciones que estás leyendo un JSON.
-5. Puedes usar emojis de manera natural.`;
+Reglas estrictas de comportamiento:
+1. ANÁLISIS: Si el cliente pide algo para "defensas", busca productos que mencionen sistema inmunológico, defensas, etc. Si pide "energía", busca metabolismo energético, vitaminas B, etc.
+2. RECOMENDACIÓN: Cuando sugieras un producto, usa ESTE FORMATO: "¡Excelente opción! Para eso te recomiendo el **[Nombre Exacto del Producto]** ($[Precio]). Te ayudará mucho porque [explica brevemente el beneficio basado en la descripción]."
+3. VERACIDAD: NUNCA inventes productos, marcas o precios que no estén en el CATÁLOGO JSON.
+4. LÍMITES: Si el cliente pide algo para lo cual NO tienes ningún producto que sirva (ej. "algo para el dolor de cabeza" y no hay analgésicos), dile amablemente que por el momento no cuentas con algo específico para eso, y ofrécele ver otras categorías como vitaminas de uso diario.
+5. TONO: Sé empático, alegre, persuasivo y conciso (máximo 2 o 3 oraciones). Usa emojis que vayan con el tema de la salud 🌱💪✨.`;
 
             // Push user message to context history
             chatHistory.push({ role: "user", parts: [{ text: userMessage }] });
